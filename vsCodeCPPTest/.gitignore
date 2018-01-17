@@ -1,0 +1,8 @@
+/RemoteSystemsTempFiles/
+/df.dat
+/saved_function.dat
+/test.o
+/test_setup.h5
+/.*/
+/.*
+!.gitignore
