@@ -10,35 +10,34 @@
 #include <dlib/svm.h>
 #include <vector>
 #include <stdexcept>
+#include "data_point.h"
 
 using namespace std;
 using namespace dlib;
 
+typedef matrix<double,0,1> sample_type;
+typedef radial_basis_kernel<sample_type> rbf_kernel;
+typedef linear_kernel<sample_type> linear_kernel;
 
 enum class KernelType {RBF,LINEAR};
 enum class TrainerType {KRR,SVM_NU,SVM_C};
 
 class BinClassifier{
-  KernelType k_type;
-  TrainerType t_type;
-  std::vector<double> params;
-  /*
-   * params(all):
-   * 0 -> num features
-   * 1 -> normalize 1: true
-   * 2 -> gamma
-   * 3 -> nu
-   * 4 -> Crossvalidation manifold
-   *
-   *
-   */
+  std::vector<sample_type> samples;
+  std::vector<double> lables;
+  const bool normalize;
+  int cross_validation_manifold;
   public:
-    BinClassifier(KernelType k_type_, TrainerType t_type_, std::vector<double> params_);
-    void train(std::vector<std::vector<double>> samples, std::vector<double> labels);
-    //double classify(std::vector<double> sample);
-  private:
-    void optimize_model_param();
-    void create_trainer();
+    BinClassifier(const bool& normalize_=true,const int& cross_validation_manifold_=3);
+    virtual ~BinClassifier(){};
+    void import_data(std::vector<DataPoint>& datapoints_);
+  protected:
+    virtual any_trainer<sample_type> get_trainer()=0;//for multiclass
+    virtual double classify(DataPoint& sample_)=0;
+    virtual void train(std::vector<double>& parameter_)=0;
+    virtual void optimize_model_param()=0;
+
+
 };
 
 

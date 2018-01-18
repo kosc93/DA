@@ -20,7 +20,7 @@ void DrawCanvas::draw(wxDC& dc){
     dc.Clear();
 
     for(auto const& datapoint: datapoints){
-        switch(datapoint.original_class){
+        switch(int(datapoint.original_class)){
           case 1:
             dc.SetBrush(*wxBLUE_BRUSH);
             break;
@@ -46,18 +46,15 @@ void DrawCanvas::draw(wxDC& dc){
 }
 
 void DrawCanvas::OnLeftClick(wxMouseEvent& event){
-  DataPoint d(1,event.GetPosition().x,event.GetPosition().y);
-  datapoints.emplace_back(1,event.GetPosition().x,event.GetPosition().y);
+  datapoints.emplace_back(1.0,event.GetPosition().x,event.GetPosition().y);
   wxWindow::Refresh();
 }
 void DrawCanvas::OnMidClick(wxMouseEvent& event){
-  DataPoint d(1,event.GetPosition().x,event.GetPosition().y);
-    datapoints.emplace_back(2,event.GetPosition().x,event.GetPosition().y);
+    datapoints.emplace_back(2.0,event.GetPosition().x,event.GetPosition().y);
     wxWindow::Refresh();
 }
 void DrawCanvas::OnRightClick(wxMouseEvent& event){
-  DataPoint d(1,event.GetPosition().x,event.GetPosition().y);
-    datapoints.emplace_back(3,event.GetPosition().x,event.GetPosition().y);
+    datapoints.emplace_back(3.0,double(event.GetPosition().x),double(event.GetPosition().y));
     wxWindow::Refresh();
 }
 BEGIN_EVENT_TABLE(DrawCanvas,BasicPicture)

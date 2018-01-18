@@ -1,6 +1,6 @@
 #include "data_point.h"
 
-DataPoint::DataPoint(int o_class, int x, int y):
+DataPoint::DataPoint(double o_class, double x, double y):
   original_class(o_class),
   calculated_class(0)
 {
