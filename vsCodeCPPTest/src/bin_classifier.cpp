@@ -1,6 +1,6 @@
 #include "bin_classifier.h"
 
-BinClassifier::BinClassifier(const bool& normalize_, const int& cross_validation_manifold_):
+BinClassifier::BinClassifier(const bool& normalize_, const long& cross_validation_manifold_):
   normalize(normalize_),
   cross_validation_manifold(cross_validation_manifold_)
 {

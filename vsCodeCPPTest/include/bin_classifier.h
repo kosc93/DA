@@ -26,9 +26,9 @@ class BinClassifier{
   std::vector<sample_type> samples;
   std::vector<double> lables;
   const bool normalize;
-  int cross_validation_manifold;
+  long cross_validation_manifold;
   public:
-    BinClassifier(const bool& normalize_=true,const int& cross_validation_manifold_=3);
+    BinClassifier(const bool& normalize_=true,const long& cross_validation_manifold_=3);
     virtual ~BinClassifier(){};
     void import_data(std::vector<DataPoint>& datapoints_);
   protected:
@@ -38,6 +38,17 @@ class BinClassifier{
     virtual void optimize_model_param()=0;
 
 
+};
+
+class KRRClassifier : public BinClassifier{
+  public:
+    KRRClassifier(const bool& normalize_=true, const long& cross_validation_manifold_=3):BinClassifier(normalize_,cross_validation_manifold_){};
+    ~KRRClassifier()=default;
+    any_trainer<sample_type> get_trainer() override;
+    double classify(DataPoint& sample_) override;
+    void train(std::vector<double>& parameter_) override;
+  private:
+    void optimize_model_param() override;
 };
 
 
