@@ -46,15 +46,18 @@ void DrawCanvas::draw(wxDC& dc){
 }
 
 void DrawCanvas::OnLeftClick(wxMouseEvent& event){
-  datapoints.emplace_back(1.0,event.GetPosition().x,event.GetPosition().y);
+  DataPoint p(1.0,event.GetPosition().x,event.GetPosition().y);
+  datapoints.push_back(p);
   wxWindow::Refresh();
 }
 void DrawCanvas::OnMidClick(wxMouseEvent& event){
-    datapoints.emplace_back(2.0,event.GetPosition().x,event.GetPosition().y);
+    DataPoint p(2.0,event.GetPosition().x,event.GetPosition().y);
+    datapoints.push_back(p);
     wxWindow::Refresh();
 }
 void DrawCanvas::OnRightClick(wxMouseEvent& event){
-    datapoints.emplace_back(3.0,double(event.GetPosition().x),double(event.GetPosition().y));
+    DataPoint p(3.0,event.GetPosition().x,event.GetPosition().y);
+    datapoints.push_back(p);
     wxWindow::Refresh();
 }
 BEGIN_EVENT_TABLE(DrawCanvas,BasicPicture)

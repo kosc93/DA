@@ -2,7 +2,7 @@ CC := g++
 SRCDIR := src
 BINDIR := bin
 BUILDDIR := build
-EXECUTABLES :=  $(BINDIR)/myApp  $(BINDIR)/svm_ex #$(BINDIR)/GUItest $(BINDIR)/bayes_net_gui_ex $(BINDIR)/3d_point_cloud_ex $(BINDIR)/surf_ex
+EXECUTABLES :=  $(BINDIR)/myApp  $(BINDIR)/opt #$(BINDIR)/svm_ex  #$(BINDIR)/GUItest $(BINDIR)/bayes_net_gui_ex $(BINDIR)/3d_point_cloud_ex $(BINDIR)/surf_ex
 
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
@@ -37,7 +37,11 @@ $(BINDIR)/surf_ex: $(BUILDDIR)/surf_ex.o $(BUILDDIR)/source.o
 $(BINDIR)/svm_ex: $(BUILDDIR)/svm_ex.o $(BUILDDIR)/source.o
 	$(CC)  -O0  $^ -o $@ $(LIB)
 
-$(BINDIR)/myApp: $(BUILDDIR)/myApp.o  $(BUILDDIR)/myFrame.o $(BUILDDIR)/draw_canvas.o $(BUILDDIR)/BasicPicture.o $(BUILDDIR)/data_point.o $(BUILDDIR)/bin_classifier.o	
+$(BINDIR)/opt: $(BUILDDIR)/opt.o $(BUILDDIR)/source.o
+	$(CC)  -O0  $^ -o $@ $(LIB)
+
+
+$(BINDIR)/myApp: $(BUILDDIR)/myApp.o  $(BUILDDIR)/myFrame.o $(BUILDDIR)/draw_canvas.o $(BUILDDIR)/BasicPicture.o $(BUILDDIR)/data_point.o $(BUILDDIR)/bin_classifier.o $(BUILDDIR)/source.o	
 	$(CC)  -O0  $^ -o $@ $(LIB) $(WXFLAGS) #$(SHOGUNFLAGS)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
