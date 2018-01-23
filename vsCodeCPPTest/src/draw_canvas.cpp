@@ -1,7 +1,7 @@
 #include "draw_canvas.h"
 
 DrawCanvas::DrawCanvas(wxWindow* parent_): BasicPicture(parent_){
-    parent = parent_;
+    //parent = parent_;
 }
 
 //DrawCanvas::DrawCanvas(const DrawCanvas& obj):

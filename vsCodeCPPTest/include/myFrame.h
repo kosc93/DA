@@ -1,7 +1,12 @@
 #ifndef MYFRAME_H_
 #define MYFRAME_H_
 #include <wx/wx.h>
+#include <memory>
+#include "bin_classifier.h"
 #include "draw_canvas.h"
+
+using namespace std;
+
 class MyFrame : public wxFrame{
   DrawCanvas* dc;
   public:
@@ -10,7 +15,7 @@ class MyFrame : public wxFrame{
     private:
         void OnHello(wxCommandEvent& event);
         void OnTrain(wxCommandEvent& event);
-
+	//unique_ptr<RVMClassifier> classifier;
     DECLARE_EVENT_TABLE();
 };
 

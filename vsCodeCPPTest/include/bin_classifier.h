@@ -28,12 +28,12 @@ class BinClassifier{
   public:
     BinClassifier(const bool& normalize_=true,const long& cross_validation_manifold_=3);
     virtual ~BinClassifier(){};
-    void import_data(std::vector<DataPoint>& datapoints_);
     double classify(DataPoint& sample_);
   protected:
     virtual any_trainer<sample_type> get_trainer()=0;//for multiclass
-    virtual void train(bool& optimize, std::vector<double>& parameter_)=0;
-
+    virtual void train(const bool& optimize=true,const std::vector<double>& parameter_={})=0;
+    void normalize_input();
+    void import_data(const std::vector<DataPoint>& datapoints_);
     std::vector<sample_type> samples;
     std::vector<double> labels;
     dec_funct_type decision_function;
@@ -49,7 +49,7 @@ class RVMClassifier : public BinClassifier{
     RVMClassifier(const bool& normalize_=true, const long& cross_validation_manifold_=3):BinClassifier(normalize_,cross_validation_manifold_){};
     ~RVMClassifier()=default;
     any_trainer<sample_type> get_trainer() override;
-    void train(bool& optimize, std::vector<double>& parameter_) override;
+    void train(const bool& optimize=true,const std::vector<double>& parameter_={}) override;
   private:
     void optimize_model_param(rvm_trainer<rbf_kernel>& trainer);
 };
@@ -59,9 +59,9 @@ class SVMNuClassifier : public BinClassifier{
     SVMNuClassifier(const bool& normalize_=true, const long& cross_validation_manifold_=3):BinClassifier(normalize_,cross_validation_manifold_){};
     ~SVMNuClassifier()=default;
     any_trainer<sample_type> get_trainer() override;
-    void train(bool& optimize, std::vector<double>& parameter_) override;
+    void train(const bool& optimize=true, const std::vector<double>& parameter_={}) override;
   private:
-    void optimize_model_param();
+    void optimize_model_param(svm_nu_trainer<rbf_kernel>& trainer);
 };
 
 class SVMCClassifier : public BinClassifier{
@@ -69,9 +69,9 @@ class SVMCClassifier : public BinClassifier{
     SVMCClassifier(const bool& normalize_=true, const long& cross_validation_manifold_=3):BinClassifier(normalize_,cross_validation_manifold_){};
     ~SVMCClassifier()=default;
     any_trainer<sample_type> get_trainer() override;
-    void train(bool& optimize, std::vector<double>& parameter_) override;
+    void train(const bool& optimize=true, const std::vector<double>& parameter_={}) override;
   private:
-    void optimize_model_param();
+    void optimize_model_param(svm_c_trainer<rbf_kernel>& trainer);
 };
 
 #endif /* INCLUDE_BIN_CLASSIFIER_H_ */

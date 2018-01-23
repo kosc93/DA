@@ -11,18 +11,12 @@ class DrawCanvas : public BasicPicture{
         //DrawCanvas(const DrawCanvas& obj);
         //~DrawCanvas();
         void draw(wxDC& dc);
-        wxWindow* parent;
+        std::vector<DataPoint> datapoints;
+        //wxWindow* parent;
     private:
         void OnLeftClick(wxMouseEvent& event);
         void OnMidClick(wxMouseEvent& event);
         void OnRightClick(wxMouseEvent& event);
-        vector<wxPoint> class1;
-        vector<wxPoint> class2;
-        vector<wxPoint> class3;
-        vector<wxPoint> support_vectors1;
-        vector<wxPoint> support_vectors2;
-        vector<wxPoint> support_vectors3;
-        vector<DataPoint> datapoints;
         DECLARE_EVENT_TABLE();
 };
 

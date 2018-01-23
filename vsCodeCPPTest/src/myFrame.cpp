@@ -1,5 +1,6 @@
 #include "myFrame.h"
 
+
 #include <memory>
 
 using namespace std;
@@ -31,15 +32,15 @@ wxFrame(NULL, wxID_ANY, title, wxDefaultPosition,wxSize(800,1000)){
 }
 
 MyFrame::~MyFrame(){
-    int a =1;
 }
 
 void MyFrame::OnHello(wxCommandEvent& event){
-    int a =1;
 }
 
 void MyFrame::OnTrain(wxCommandEvent& event){
-    int a=1;
+  RVMClassifier classifier;
+  classifier.import_data(dc->datapoints);
+  classifier.train();
 }
 
 wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
