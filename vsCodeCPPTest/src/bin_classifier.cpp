@@ -8,6 +8,7 @@ BinClassifier::BinClassifier(const bool& normalize_, const long& cross_validatio
   normalize(normalize_),
   cross_validation_manifold(cross_validation_manifold_)
 {
+
 }
 
 void BinClassifier::import_data(const std::vector<DataPoint>& datapoints_){
