@@ -5,5 +5,7 @@
 /test_setup.h5
 /.*/
 /.*
+/bin/
+/build/
 !.gitignore
 ../README.md

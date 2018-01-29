@@ -2,7 +2,7 @@ CC := h5c++#g++#
 SRCDIR := src
 BINDIR := bin
 BUILDDIR := build
-EXECUTABLES :=  $(BINDIR)/myApp  $(BINDIR)/opt $(BINDIR)/test_hdf5#$(BINDIR)/svm_ex  #$(BINDIR)/GUItest $(BINDIR)/bayes_net_gui_ex $(BINDIR)/3d_point_cloud_ex $(BINDIR)/surf_ex
+EXECUTABLES :=  $(BINDIR)/myApp $(BINDIR)/test_hdf5 #$(BINDIR)/opt #$(BINDIR)/test_hdf5#$(BINDIR)/svm_ex  #$(BINDIR)/GUItest $(BINDIR)/bayes_net_gui_ex $(BINDIR)/3d_point_cloud_ex $(BINDIR)/surf_ex
 
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
@@ -45,7 +45,7 @@ $(BINDIR)/test_hdf5: $(BUILDDIR)/test_hdf5.o
 	$(CC)  -O0  $^ -o $@ $(LIB)
 
 
-$(BINDIR)/myApp: $(BUILDDIR)/myApp.o  $(BUILDDIR)/myFrame.o $(BUILDDIR)/draw_canvas.o $(BUILDDIR)/BasicPicture.o $(BUILDDIR)/data_point.o $(BUILDDIR)/bin_classifier.o $(BUILDDIR)/source.o	
+$(BINDIR)/myApp: $(BUILDDIR)/myApp.o  $(BUILDDIR)/myFrame.o $(BUILDDIR)/draw_canvas.o $(BUILDDIR)/BasicPicture.o $(BUILDDIR)/data_point.o $(BUILDDIR)/bin_classifier.o $(BUILDDIR)/measurement_data.o $(BUILDDIR)/source.o	
 	$(CC)  -O0  $^ -o $@ $(LIB) $(WXFLAGS) #$(SHOGUNFLAGS)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)

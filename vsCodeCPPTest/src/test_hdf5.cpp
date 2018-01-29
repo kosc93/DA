@@ -106,6 +106,11 @@ int main(void)
       size_t num_messungen = getNumObj(file);
 	for(unsigned int i = 0;i<num_messungen;i++){
 	     Group messung=getChildGroup(file,i);
+	     Attribute time = messung.openAttribute("time");
+	     std::string t = time.getName();
+	     DataType type = time.getDataType();
+	     time.read(type,t);
+
 	     size_t num_geraete= getNumObj(messung);
 		 for(unsigned int j =0;j<num_geraete;j++){
 		     Group geraet=getChildGroup(messung,j);
@@ -129,6 +134,7 @@ int main(void)
 		 }
 
 	}
+	file.close();
 
       //DataSet*  dataset = new DataSet (file->openDataSet( DATASET_NAME ));
 
