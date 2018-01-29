@@ -7,7 +7,7 @@ EXECUTABLES :=  $(BINDIR)/myApp  $(BINDIR)/opt $(BINDIR)/test_hdf5#$(BINDIR)/svm
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 
-CPPFLAGS := -g -Wall -std=c++11 #-DDLIB_NO_GUI_SUPPORT
+CPPFLAGS := -g -O0 -Wall -std=c++11 #-DDLIB_NO_GUI_SUPPORT
 WXFLAGS := `wx-config --cxxflags` `wx-config --libs`
 SHOGUNFLAGS :=  -lshogun
 HDF5FLAGS := h5c++ -show
