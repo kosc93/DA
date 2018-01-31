@@ -101,6 +101,33 @@ vector<Measurement> H5MeasurementFile::scan ()
      }
      return result;
 }
+//
+//void
+//Measurement::serialize ()
+//{
+//  try {
+//      std::string filename = date+".dat";
+//      dlib::serialize(filename)<<date<<devices;
+//  } catch (Exception e) {
+//      e.printError();
+//  }
+//}
+//
+//void
+//Measurement::deserialize ()
+//{
+//  try {
+//      std::string filename = date+".dat";
+//      std::string date_;
+//      std::vector<Device> devices_;
+//      dlib::deserialize(filename)>>date_>>devices;
+//      date=date_;
+//      devices=devices_;
+//  } catch (Exception e) {
+//      e.printError();
+//  }
+//
+//}
 /*
  * measurement_data.cpp
  *

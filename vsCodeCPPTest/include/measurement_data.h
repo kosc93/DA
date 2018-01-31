@@ -9,6 +9,7 @@
 #define MEASUREMENT_DATA_H_
 #include <vector>
 #include <string>
+#include <dlib/serialize.h>
 #include "hdf5/serial/H5Cpp.h"
 
 using namespace H5;
@@ -39,7 +40,11 @@ class Measurement{
   public:
     Measurement(string date_):date(date_){};
     vector<Device> devices;
-    const string date;
+    string date;
+    void rename(const string newName){date = newName;};
+//    void serialize();
+//    void deserialize();
+//    implement serialization for subclasses
 };
 
 class H5MeasurementFile{
