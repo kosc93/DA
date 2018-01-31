@@ -11,37 +11,42 @@
 #include <string>
 #include <dlib/serialize.h>
 #include "hdf5/serial/H5Cpp.h"
+#include "data_point.h"
 
 using namespace H5;
 
-using namespace std;
+
 
 
 struct Trace{
-  vector<double> real;
-  vector<double> imag;
+  std::vector<double> real;
+  std::vector<double> imag;
   unsigned int name;
   unsigned int num_points;
+  std::string start_freq;
+  std::string stop_freq;
 };
 
 struct Channel{
-  vector<Trace> traces;
+  std::vector<Trace> traces;
   unsigned int name;
 };
 
 struct Device{
-  vector<Channel> channels;
-  string manufacturer;
-  string model;
-  string serial;
+  std::vector<Channel> channels;
+  std::string manufacturer;
+  std::string model;
+  std::string serial;
 };
 
 class Measurement{
   public:
-    Measurement(string date_):date(date_){};
-    vector<Device> devices;
-    string date;
-    void rename(const string newName){date = newName;};
+    Measurement(std::string date_):date(date_),label(0){};
+    std::vector<Device> devices;
+    std::string date;
+    DataPoint getDatapoint(unsigned int device_index);
+    void rename(const std::string newName){date = newName;};
+    double label;
 //    void serialize();
 //    void deserialize();
 //    implement serialization for subclasses
@@ -49,11 +54,11 @@ class Measurement{
 
 class H5MeasurementFile{
   public:
-    H5MeasurementFile(string& filename_):filename(filename_){};
-    vector<Measurement> scan();
-    vector<Measurement> measurements;
+    H5MeasurementFile(std::string& filename_):filename(filename_){};
+    std::vector<Measurement> scan();
+    std::vector<Measurement> measurements;
   private:
-    string filename;
+    std::string filename;
 
 };
 

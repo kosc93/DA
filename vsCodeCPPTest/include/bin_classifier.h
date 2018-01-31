@@ -29,11 +29,11 @@ class BinClassifier{
     BinClassifier(const bool& normalize_=true,const long& cross_validation_manifold_=3);
     virtual ~BinClassifier(){};
     double classify(DataPoint& sample_);
+    void import_data(const std::vector<DataPoint>& datapoints_);
+    virtual void train(const bool& optimize=true,const std::vector<double>& parameter_={})=0;
   protected:
     virtual any_trainer<sample_type> get_trainer()=0;//for multiclass
-    virtual void train(const bool& optimize=true,const std::vector<double>& parameter_={})=0;
     void normalize_input();
-    void import_data(const std::vector<DataPoint>& datapoints_);
     std::vector<sample_type> samples;
     std::vector<double> labels;
     dec_funct_type decision_function;

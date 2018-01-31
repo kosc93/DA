@@ -5,6 +5,7 @@
 
 class DataPoint{
     public:
+	DataPoint():original_class(0),calculated_class(0){};
         DataPoint(double o_class,double x, double y);
 //        DataPoint(const DataPoint& obj);
 //        DataPoint(DataPoint&& obj);

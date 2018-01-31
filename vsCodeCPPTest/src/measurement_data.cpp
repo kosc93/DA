@@ -31,8 +31,8 @@ size_t getNumObj(T& parent){
   return parent.getNumObjs();
 }
 template<class T>
-string getAttr(T parent, string attr_name){
-  string result;
+std::string getAttr(T parent, std::string attr_name){
+  std::string result;
   Attribute att = parent.openAttribute(attr_name);
   DataType type = att.getDataType();
   att.read(type,result);
@@ -40,7 +40,7 @@ string getAttr(T parent, string attr_name){
 }
 
 
-vector<Measurement> H5MeasurementFile::scan ()
+std::vector<Measurement> H5MeasurementFile::scan ()
 {
   const H5std_string REAL( "r" );
   const H5std_string IMAG( "i" );
@@ -48,7 +48,7 @@ vector<Measurement> H5MeasurementFile::scan ()
       double r;
       double i;
      };
-     vector<Measurement> result;
+     std::vector<Measurement> result;
      try {
 	 Exception::dontPrint();
 	 CompType data_type(sizeof(MeasurementDataCompType));
@@ -76,6 +76,15 @@ vector<Measurement> H5MeasurementFile::scan ()
 				 Trace trace_;
 				 trace_.name=l;
 				 Group trace = getChildGroup(channel,l);
+				 Group metaData = trace.openGroup("metaData");
+				 DataSet f_start = metaData.openDataSet("start_freq");
+				 StrType f_start_type = f_start.getStrType();
+				 f_start.read(trace_.start_freq,f_start_type);
+				 DataSet f_stop = metaData.openDataSet("stop_freq");
+				 StrType f_stop_type = f_stop.getStrType();
+				 f_stop.read(trace_.stop_freq,f_stop_type);
+				 //trace_.start_freq = getAttr(metaData,"start_freq");
+				 //trace_.stop_freq = getAttr(metaData,"stop_freq");
 				 DataSet s_param=trace.openDataSet(std::string("unformatted_data"));
 				 const unsigned int num_elements = s_param.getStorageSize()/sizeof(data_type);
 				 MeasurementDataCompType data[num_elements];
@@ -101,6 +110,30 @@ vector<Measurement> H5MeasurementFile::scan ()
      }
      return result;
 }
+
+DataPoint
+Measurement::getDatapoint(unsigned int device_index)
+{
+  if(label==0){
+      throw std::invalid_argument("measurement not labeled");
+  }
+  if(device_index>=devices.size()){
+      throw std::invalid_argument("invalid device index");
+  }
+  Device device = devices[device_index];
+  DataPoint dp;
+  dp.calculated_class=label;
+  for(const auto& channel: device.channels){
+      for(const auto& trace : channel.traces){
+	  for(unsigned int i=0;i<trace.num_points;i++){
+	      dp.features.push_back(trace.real[i]);
+	      dp.features.push_back(trace.imag[i]);
+	  }
+      }
+  }
+  return dp;
+}
+
 //
 //void
 //Measurement::serialize ()
