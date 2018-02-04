@@ -45,8 +45,8 @@ $(BINDIR)/test_hdf5: $(BUILDDIR)/test_hdf5.o
 	$(CC)  -O0  $^ -o $@ $(LIB)
 
 
-$(BINDIR)/myApp: $(BUILDDIR)/myApp.o  $(BUILDDIR)/myFrame.o $(BUILDDIR)/draw_canvas.o $(BUILDDIR)/BasicPicture.o $(BUILDDIR)/data_point.o $(BUILDDIR)/bin_classifier.o $(BUILDDIR)/measurement_data.o $(BUILDDIR)/source.o	
-	$(CC)  -O0  $^ -o $@ $(LIB) $(WXFLAGS) #$(SHOGUNFLAGS)
+$(BINDIR)/myApp: $(BUILDDIR)/myApp.o  $(BUILDDIR)/myFrame.o $(BUILDDIR)/draw_canvas.o $(BUILDDIR)/BasicPicture.o $(BUILDDIR)/data_point.o $(BUILDDIR)/bin_classifier.o $(BUILDDIR)/measurement_data.o $(BUILDDIR)/helpers.o $(BUILDDIR)/Graph.o $(BUILDDIR)/source.o	
+	$(CC)  -Og  $^ -o $@ $(LIB) $(WXFLAGS) #$(SHOGUNFLAGS)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
