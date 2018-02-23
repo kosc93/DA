@@ -1,12 +1,14 @@
 #include "bin_classifier.h"
 #include <dlib/global_optimization.h>
 #include <dlib/optimization.h>
-#include "helpers.h"
+#include "defines_etc.h"
 
 
-BinClassifier::BinClassifier(const bool& normalize_, const long& cross_validation_manifold_):
+BinClassifier::BinClassifier(const bool& normalize_, const long& cross_validation_manifold_, const bool& optimize_,const std::vector<double>& parameter_):
   normalize(normalize_),
-  cross_validation_manifold(cross_validation_manifold_)
+  cross_validation_manifold(cross_validation_manifold_),
+  optimize(optimize_),
+  parameter(parameter_)
 {
 
 }
@@ -54,21 +56,21 @@ RVMClassifier::get_trainer ()
 
 
 void
-RVMClassifier::train (const bool& optmize, const std::vector<double>& parameter_)
+RVMClassifier::train ()
 {
   if(normalize)
     normalize_input();
   randomize_samples(samples,labels);
   rvm_trainer<rbf_kernel> trainer;
-  if(optmize){
+  if(optimize){
     optimize_model_param(trainer);
   }
   else{
-    if(parameter_.size()!=3)
+    if(parameter.size()!=3)
       throw std::invalid_argument("invalid parameters");
-    trainer.set_epsilon(parameter_[0]);
-    trainer.set_kernel(parameter_[1]);
-    trainer.set_max_iterations(parameter_[2]);
+    trainer.set_epsilon(parameter[0]);
+    trainer.set_kernel(rbf_kernel(parameter[1]));
+    trainer.set_max_iterations(parameter[2]);
   }
   if(normalize){
       renormalized_decision_function.function = trainer.train(samples,labels);
@@ -107,20 +109,20 @@ SVMNuClassifier::get_trainer ()
 
 
 void
-SVMNuClassifier::train (const bool& optmize, const std::vector<double>& parameter_)
+SVMNuClassifier::train ()
 {
   if(normalize)
     normalize_input();
   randomize_samples(samples,labels);
   svm_nu_trainer<rbf_kernel> trainer;
-  if(optmize){
+  if(optimize){
       optimize_model_param(trainer);
   }
   else{
-    if(parameter_.size()!=2)
+    if(parameter.size()!=2)
       throw std::invalid_argument("invalid parameters");
-    trainer.set_nu(parameter_[0]);
-    trainer.set_kernel(parameter_[1]);
+    trainer.set_nu(parameter[0]);
+    trainer.set_kernel(rbf_kernel(parameter[1]));
   }
   if(normalize){
       renormalized_decision_function.function = trainer.train(samples,labels);
@@ -158,20 +160,20 @@ SVMCClassifier::get_trainer ()
 }
 
 void
-SVMCClassifier::train (const bool& optmize, const std::vector<double>& parameter_)
+SVMCClassifier::train ()
 {
   if(normalize)
     normalize_input();
   randomize_samples(samples,labels);
   svm_c_trainer<rbf_kernel> trainer;
-  if(optmize){
+  if(optimize){
       optimize_model_param(trainer);
   }
   else{
-    if(parameter_.size()!=2)
+    if(parameter.size()!=2)
       throw std::invalid_argument("invalid parameters");
-    trainer.set_c(parameter_[0]);
-    trainer.set_kernel(parameter_[1]);
+    trainer.set_c(parameter[0]);
+    trainer.set_kernel(rbf_kernel(parameter[1]));
   }
   if(normalize){
       renormalized_decision_function.function = trainer.train(samples,labels);

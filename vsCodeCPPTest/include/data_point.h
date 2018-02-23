@@ -1,7 +1,7 @@
 #ifndef DATA_POINT_H_
 #define DATA_POINT_H_
 #include <vector>
-#include <wx/wx.h>
+
 
 class DataPoint{
     public:

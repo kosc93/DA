@@ -6,7 +6,7 @@
 class MyApp : public wxApp{
 public:
     virtual bool OnInit() override;
-    virtual int OnExit() override;
+    //virtual int OnExit() override;
 };
 
 #endif

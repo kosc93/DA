@@ -15,8 +15,8 @@ bool MyApp::OnInit(){
 
 IMPLEMENT_APP(MyApp);
 
-int
-MyApp::OnExit ()
-{
-  return 0;
-}
+//int
+//MyApp::OnExit ()
+//{
+//  return 0;
+//}

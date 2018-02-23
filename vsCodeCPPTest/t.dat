@@ -1,0 +1,47 @@
+ 	
+
+#
+# Gnuplot version 5.0 demo of multiplot auto-layout capability
+#
+# 
+# set terminal wxt persist
+set multiplot layout 2, 3 columnsfirst title "test trace plot" 
+# 2, num_tr
+set tmargin 3
+set lmargin 10
+set rmargin 1
+
+#set bmargin 0
+set xrange [2000000000.0:12000000000.0] # fmin:fmax
+set xtics 2000000000.0,4000000000.0,12000000000.0 
+# fmin,fmax-fmin/5,fmax
+set title "Arg Trace 1"
+unset key
+#i...num_tr  1: begin ... end
+plot 'test.dat' i 0 using 1:2 title 'mag' w lines lt 1,\
+'' i 0 u 1:4 w lines lt 2					      
+# 1: begin+2...end
+#
+set title "Phase Trace 1"
+set key bmargin center horizontal box;
+ plot 'test.dat' i 0 using 1:3 title 'phase' w lines lt 1 #i...num_tr  1: begin+1 ... end
+#
+set title "Arg Trace 2"
+unset key
+plot 'test.dat' i 1 using 1:2 title 'mag' w lines lt 1
+#
+set title "Phase Trace 2"
+unset key;
+ plot 'test.dat' i 1 using 1:3 title 'phase' w lines lt 1
+ #
+ set title "Arg Trace 3"
+unset key
+plot 'test.dat' i 2 using 1:2 title 'mag' w lines lt 1
+#
+set title "Phase Trace 3"
+unset key;
+ plot 'test.dat' i 2 using 1:3 title 'phase' w lines lt 1
+unset multiplot
+#
+#
+#
