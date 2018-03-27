@@ -1,5 +1,51 @@
 #include "measurement_data.h"
 
+void
+Trace::normalize ()
+{
+    auto max_mag= max_element(mag.begin(),mag.end());
+    for(auto& m:mag){
+	m/=*max_mag;
+    }
+    auto max_phase= max_element(phase.begin(),phase.end());
+    for(auto& p:phase){
+    	p/=*max_phase;
+    }
+}
+
+DataPoint
+Measurement::getDatapoint(unsigned int device_index,bool only_mag)
+{
+  if(label==0){
+      throw std::invalid_argument("measurement not labeled");
+  }
+  if(device_index>=devices.size()){
+      throw std::invalid_argument("invalid device index");
+  }
+  Device device = devices[device_index];
+  DataPoint dp(label);
+  for(const auto& channel: device.channels){
+      for(const auto& trace : channel.traces){
+	  for(unsigned int i=0;i<trace.num_points;i++){
+	      if(only_mag){
+		  dp.features.push_back(trace.mag[i]);
+	      }else{
+		dp.features.push_back(trace.real[i]);
+		dp.features.push_back(trace.imag[i]);
+	      }
+	  }
+      }
+  }
+  return dp;
+}
+
+template <class T>
+std::string zero_padd(const T& t,int num_zeros){
+  std::string str=std::to_string(t);
+  std::string padded_string=std::string(num_zeros-str.length(),'0')+str;
+  return padded_string;
+}
+
 template <class T>
 std::string getObjectName(const T& parent,size_t index){
     const ssize_t maxLength = 1023;
@@ -89,7 +135,7 @@ std::string getAttr(T parent, std::string attr_name){
 }
 
 
-std::vector<Measurement> H5MeasurementFile::scan ()
+std::vector<Measurement> H5MeasurementFile::scan (bool use_reps, bool unformatted)
 {
   const H5std_string REAL( "r" );
   const H5std_string IMAG( "i" );
@@ -99,7 +145,7 @@ std::vector<Measurement> H5MeasurementFile::scan ()
      };
      std::vector<Measurement> result;
      try {
-	 Exception::dontPrint();
+	 //Exception::dontPrint();
 	 CompType data_type(sizeof(MeasurementDataCompType));
 	 data_type.insertMember(REAL,HOFFSET(MeasurementDataCompType,r), PredType::NATIVE_DOUBLE);
 	 data_type.insertMember(IMAG,HOFFSET(MeasurementDataCompType,i), PredType::NATIVE_DOUBLE);
@@ -113,8 +159,15 @@ std::vector<Measurement> H5MeasurementFile::scan ()
 			 Attribute label_attr = messung.openAttribute("label");
 			 label_attr.read(PredType::NATIVE_DOUBLE,&label);
 		     }
+		     if(!use_reps&&label<0){
+			 continue;
+		     }
+		     //use_repetitions.read(PredType::NATIVE_INT,&use_reps);
+
 		     Measurement measurement(date);
 		     measurement.label=label;
+		     measurement.h5_name=getObjectName(file,i);
+		     int num_features=0;
 		     size_t num_geraete= getNumObj(messung);
 		     for(unsigned int j =0;j<num_geraete;j++){
 			 Device device;
@@ -147,14 +200,23 @@ std::vector<Measurement> H5MeasurementFile::scan ()
 				 f_stop.read(trace_.stop_freq,f_stop_type);
 				 //trace_.start_freq = getAttr(metaData,"start_freq");
 				 //trace_.stop_freq = getAttr(metaData,"stop_freq");
-				 DataSet s_param=trace.openDataSet(std::string("unformatted_data"));
+				 DataSet s_param;
+				 if(!unformatted){
+				     s_param=trace.openDataSet(std::string("formatted_data"));
+				 }else{
+				     s_param=trace.openDataSet(std::string("unformatted_data"));
+				 }
 				 const unsigned int num_elements = s_param.getStorageSize()/sizeof(data_type);
 				 MeasurementDataCompType data[num_elements];
 				 trace_.num_points=num_elements;
+				 num_features+=num_elements;
 				 s_param.read(data,data_type);
 				 for(unsigned int n =0; n<num_elements;n++){
+				     complex<double> c(data[n].r,data[n].i);
 				     trace_.real.push_back(data[n].r);
 				     trace_.imag.push_back(data[n].i);
+				     trace_.mag.push_back(abs(c));
+				     trace_.phase.push_back(arg(c));
 				 }
 				 channel_.traces.push_back(trace_);
 			     }
@@ -162,40 +224,21 @@ std::vector<Measurement> H5MeasurementFile::scan ()
 			 }
 			 measurement.devices.push_back(device);
 		     }
-		     result.push_back(measurement);
-
+		     if(measurement.devices.size()!=0){
+			 measurement.num_features=num_features;
+		       result.push_back(measurement);
+		     }
 	 	}
 	 	file.close();
 
      } catch (Exception e) {
-	 cout<<"scanning error:"<<endl;
+	 cout<<"scanning error:"<<filename<<endl;
 	 e.printError();
      }
      return result;
 }
 
-DataPoint
-Measurement::getDatapoint(unsigned int device_index)
-{
-  if(label==0){
-      throw std::invalid_argument("measurement not labeled");
-  }
-  if(device_index>=devices.size()){
-      throw std::invalid_argument("invalid device index");
-  }
-  Device device = devices[device_index];
-  DataPoint dp;
-  dp.calculated_class=label;
-  for(const auto& channel: device.channels){
-      for(const auto& trace : channel.traces){
-	  for(unsigned int i=0;i<trace.num_points;i++){
-	      dp.features.push_back(trace.real[i]);
-	      dp.features.push_back(trace.imag[i]);
-	  }
-      }
-  }
-  return dp;
-}
+
 
 void
 H5MeasurementFile::export_data (std::vector<Measurement>& data_)
@@ -215,8 +258,7 @@ H5MeasurementFile::export_data (std::vector<Measurement>& data_)
 	    Attribute marker = assertAttribute(data_point,"label",PredType::NATIVE_DOUBLE);
 	    marker.write(PredType::NATIVE_DOUBLE,&measurement.label);
 	    DataPoint dp = measurement.getDatapoint(0);
-	    DataSet features = datasetOverride(data_point,"features",dp.features);
-	    features.write(&dp.features[0],PredType::NATIVE_DOUBLE);
+
 
   	}
 
@@ -296,8 +338,9 @@ H5MeasurementFile::label (string label_filename)
     	     cout<<"ca not find file!"<<endl;
     	     throw;
     	 }
+    	 std::string h5_name;
     	 double single_measurement=0.0;
-    	 while(label_stream>>single_measurement){
+    	 while(label_stream>>h5_name>>single_measurement){
     	     labels.push_back(single_measurement);
     	 }
     	 H5File file = H5File(filename, H5F_ACC_RDWR);
@@ -323,12 +366,16 @@ void
 H5MeasurementFile::append (string append_filename)
 {
   try {
-    	 Exception::dontPrint();
+    	 //Exception::dontPrint();
   	 H5MeasurementFile file(filename);
   	 H5MeasurementFile append_file(append_filename);
   	 //scan files, compare group attr and write groups
-  	 std::vector<Measurement> append_data = append_file.scan();
-  	 std::vector<Measurement> data = file.scan();
+  	 std::vector<Measurement> append_data = append_file.scan(true);
+  	 std::vector<Measurement> data = file.scan(true);
+  	 if(append_data.size()==0){
+  	     cout<<"no measurements found"<<endl;
+  	     throw;
+  	 }
   	 long start_index=data.size();
   	 for(unsigned int measurement_count=0;measurement_count<append_data.size();measurement_count++){
   	     bool is_new=true;
@@ -341,18 +388,19 @@ H5MeasurementFile::append (string append_filename)
   	     }
   	     if(is_new){
   		 ostringstream command;
-  		 command<<"h5copy -i '"<<append_filename<<"' -s '/"<<measurement_count;
-  		 command<<"' -o '"<<filename<<"' -d '/"<<start_index<<"'";
+  		 command<<"h5copy -i '"<<append_filename<<"' -s '/"<<zero_padd(measurement_count,5);
+  		 command<<"' -o '"<<filename<<"' -d '/"<<zero_padd(start_index,5)<<"'";
   		 start_index++;
   		 if(system(command.str().c_str())){
   		   cout<<"something went wrong with the copying"<<endl;
   		 }else{
-  		     cout<<"sucessfully copied"<<endl;
+  		     cout<<"copying "<<measurement_count<<'/'<<append_data.size()<<'\r';
   		 }
 
   	     }
 
   	 }
+
          } catch (Exception e) {
              cout<<"appending error:"<<endl;
     	 e.printError();

@@ -9,10 +9,10 @@
 #define MEASUREMENT_DATA_H_
 #include <vector>
 #include <string>
-#include <dlib/serialize.h>
+#include <algorithm>
+#include <dlib/statistics.h>
 #include "hdf5/serial/H5Cpp.h"
-#include "data_point.h"
-#include "bin_classifier.h"
+#include "classifier.h"
 #include <iomanip>
 #include <sstream>
 #include <fstream>
@@ -41,7 +41,13 @@ struct ClassifierParam{
 struct Trace{
   std::vector<double> real;
   std::vector<double> imag;
+  std::vector<double> mag;
+  std::vector<double> phase;
+  std::vector<double> processed_real;
+  std::vector<double> processed_imag;
+  void normalize();
   std::string name;
+  bool isProcessed = false;
   unsigned int num_points;
   std::string start_freq;
   std::string stop_freq;
@@ -62,11 +68,13 @@ struct Device{
 class Measurement{
   public:
     Measurement(std::string date_):date(date_),label(0){};
+    int num_features;
     std::vector<Device> devices;
     std::string date;
-    DataPoint getDatapoint(unsigned int device_index);
+    DataPoint getDatapoint(unsigned int device_index,bool only_mag=false);
     void rename(const std::string newName){date = newName;};
     double label;
+    std::string h5_name;
 //    void serialize();
 //    void deserialize();
 //    implement serialization for subclasses
@@ -75,7 +83,7 @@ class Measurement{
 class H5MeasurementFile{
   public:
     H5MeasurementFile(std::string& filename_):filename(filename_){H5File file(filename, H5F_ACC_CREAT | H5F_ACC_RDWR);file.close();};
-    std::vector<Measurement> scan();// change to void  to adopt for either new data or exported files
+    std::vector<Measurement> scan(bool use_reps=false, bool unformatted=true);// change to void  to adopt for either new data or exported files
     void label(double& label);
     void label(string label_filename);
     void export_data(std::vector<Measurement>& data_);

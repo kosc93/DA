@@ -48,7 +48,7 @@ int main(int argc, char** argv){
         return 0;
     }
   H5MeasurementFile file(filename);
-  std::vector<Measurement> data = file.scan();
+  std::vector<Measurement> data = file.scan(false);
 
   if(data.size()==0){
       cout<<"no measurements found!"<<endl;
