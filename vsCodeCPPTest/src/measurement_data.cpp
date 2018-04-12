@@ -14,19 +14,19 @@ Trace::normalize ()
 }
 
 DataPoint
-Measurement::getDatapoint(unsigned int device_index,bool only_mag)
+Measurement::getDatapoint(const bool& only_mag)
 {
   if(label==0){
       throw std::invalid_argument("measurement not labeled");
   }
-  if(device_index>=devices.size()){
-      throw std::invalid_argument("invalid device index");
-  }
-  Device device = devices[device_index];
+
+  Device device = devices[0];
   DataPoint dp(label);
   for(const auto& channel: device.channels){
       for(const auto& trace : channel.traces){
+
 	  for(unsigned int i=0;i<trace.num_points;i++){
+
 	      if(only_mag){
 		  dp.features.push_back(trace.mag[i]);
 	      }else{
@@ -135,7 +135,7 @@ std::string getAttr(T parent, std::string attr_name){
 }
 
 
-std::vector<Measurement> H5MeasurementFile::scan (bool use_reps, bool unformatted)
+std::vector<Measurement> H5MeasurementFile::scan (bool use_reps, bool unformatted,std::vector<string> filt_traces,FrequencySpan filt_freq_span)
 {
   const H5std_string REAL( "r" );
   const H5std_string IMAG( "i" );
@@ -186,12 +186,15 @@ std::vector<Measurement> H5MeasurementFile::scan (bool use_reps, bool unformatte
 			     size_t num_traces = getNumObj(channel);
 			     for(unsigned int l =0;l<num_traces;l++){
 				 Trace trace_;
-
 				 Group trace = getChildGroup(channel,l);
 				 Group metaData = trace.openGroup("metaData");
 				 DataSet t_name = metaData.openDataSet("trace");
 				 StrType t_name_type = t_name.getStrType();
 				 t_name.read(trace_.name,t_name_type);
+				  // filter traces
+				  // if filt_traces is empty nothing will be filtered
+				  if(filt_traces.size()!=0&&std::find(filt_traces.begin(),filt_traces.end(),trace_.name)==filt_traces.end())
+				      continue;
 				 DataSet f_start = metaData.openDataSet("start_freq");
 				 StrType f_start_type = f_start.getStrType();
 				 f_start.read(trace_.start_freq,f_start_type);
@@ -206,18 +209,30 @@ std::vector<Measurement> H5MeasurementFile::scan (bool use_reps, bool unformatte
 				 }else{
 				     s_param=trace.openDataSet(std::string("unformatted_data"));
 				 }
-				 const unsigned int num_elements = s_param.getStorageSize()/sizeof(data_type);
+				 unsigned int num_elements = s_param.getStorageSize()/sizeof(data_type);
 				 MeasurementDataCompType data[num_elements];
 				 trace_.num_points=num_elements;
-				 num_features+=num_elements;
+				  //init the FrequencySpan object with the relevant trace data
+				  filt_freq_span<<trace_;
+
 				 s_param.read(data,data_type);
 				 for(unsigned int n =0; n<num_elements;n++){
+				      // frequency span
+				      // if freqency span.contains(i)
+				      // continue
+				      if(!filt_freq_span(n))
+					continue;
 				     complex<double> c(data[n].r,data[n].i);
 				     trace_.real.push_back(data[n].r);
 				     trace_.imag.push_back(data[n].i);
 				     trace_.mag.push_back(abs(c));
 				     trace_.phase.push_back(arg(c));
 				 }
+				 num_elements=trace_.mag.size();
+				 trace_.num_points=num_elements;
+				 num_features+=num_elements;
+				 trace_.start_freq=std::to_string(filt_freq_span.start_freq);
+				 trace_.stop_freq=std::to_string(filt_freq_span.stop_freq);
 				 channel_.traces.push_back(trace_);
 			     }
 			     device.channels.push_back(channel_);
@@ -257,7 +272,7 @@ H5MeasurementFile::export_data (std::vector<Measurement>& data_)
   	    Group data_point = assertGroup(data,measurement.date);
 	    Attribute marker = assertAttribute(data_point,"label",PredType::NATIVE_DOUBLE);
 	    marker.write(PredType::NATIVE_DOUBLE,&measurement.label);
-	    DataPoint dp = measurement.getDatapoint(0);
+	    //DataPoint dp = measurement.getDatapoint(0);
 
 
   	}

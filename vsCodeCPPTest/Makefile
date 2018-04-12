@@ -2,7 +2,7 @@ CC := g++ -O0 -g #h5c++##
 SRCDIR := src
 BINDIR := bin
 BUILDDIR := build
-EXECUTABLES :=   $(BINDIR)/vo_klass $(BINDIR)/h5_helper  #$(BINDIR)/dlib_test $(BINDIR)/myApp $(BINDIR)/test_hdf5 #$(BINDIR)/opt #$(BINDIR)/test_hdf5#$(BINDIR)/svm_ex  #$(BINDIR)/GUItest $(BINDIR)/bayes_net_gui_ex $(BINDIR)/3d_point_cloud_ex $(BINDIR)/surf_ex
+EXECUTABLES :=   $(BINDIR)/vo_klass $(BINDIR)/h5_helper  $(BINDIR)/dlib_test #$(BINDIR)/myApp $(BINDIR)/test_hdf5 #$(BINDIR)/opt #$(BINDIR)/test_hdf5#$(BINDIR)/svm_ex  #$(BINDIR)/GUItest $(BINDIR)/bayes_net_gui_ex $(BINDIR)/3d_point_cloud_ex $(BINDIR)/surf_ex
 
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
@@ -46,7 +46,7 @@ $(BINDIR)/shogunTest: $(BUILDDIR)/shogunTest.o $(BUILDDIR)/source.o
 $(BINDIR)/h5_helper: $(BUILDDIR)/h5_helper.o $(BUILDDIR)/measurement_data.o  $(BUILDDIR)/classifier.o  $(BUILDDIR)/source.o 
 	$(CC)   $^ -o $@ $(LIB) $(HDF5FLAGS) 
 	
-$(BINDIR)/vo_klass: $(BUILDDIR)/vo_klass.o $(BUILDDIR)/measurement_data.o  $(BUILDDIR)/preprocessing.o $(BUILDDIR)/classifier.o  $(BUILDDIR)/source.o  
+$(BINDIR)/vo_klass: $(BUILDDIR)/vo_klass.o $(BUILDDIR)/measurement_data.o  $(BUILDDIR)/preprocessing.o $(BUILDDIR)/classifier.o $(BUILDDIR)/data_gateway.o $(BUILDDIR)/source.o  
 	$(CC)  $^ -o $@ $(LIB)
 
 $(BINDIR)/myApp: $(BUILDDIR)/myApp.o  $(BUILDDIR)/myFrame.o $(BUILDDIR)/draw_canvas.o $(BUILDDIR)/BasicPicture.o $(BUILDDIR)/data_point.o $(BUILDDIR)/classifier.o $(BUILDDIR)/measurement_data.o $(BUILDDIR)/Graph.o $(BUILDDIR)/custom_widgets.o $(BUILDDIR)/source.o	

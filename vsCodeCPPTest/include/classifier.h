@@ -30,44 +30,15 @@ struct OptimizationBoundarys{
 template<class kernel>
 struct BinDecisionFunc{
   typedef decision_function<kernel > dec_funct_type;
-  typedef normalized_function<dec_funct_type> funct_type;
   DimReduction dim_reduce;
-  funct_type renormalized_decision_function;
-  vector_normalizer<sample_type> normalizer;
+  dec_funct_type bin_decision_function;
   bool imported=false;
   double operator()(const sample_type& sample_)const{
-//    //datapoint to dlib::matrix conversion
         sample_type sample;
         sample.set_size(sample_.size());
         sample=sample_;
-//        //normalization
-//        sample=normalizer(sample);
-//        //dimension reduction
-//        dlib::matrix<double>sample_dim_reduced =dim_reduce.X_dim_reduce*sample-dim_reduce.M_dim_reduce;
-//        sample.set_size(sample_dim_reduced.size());
-//        sample=sample_dim_reduced;
-//    	//cout<<sample;
 
-        //result of the decision function
-        return renormalized_decision_function.function(sample);
-  }
-  double operator()(const DataPoint& sample_)const{
-    //datapoint to dlib::matrix conversion
-        sample_type sample;
-        sample.set_size(sample_.features.size());
-        for(unsigned int i=0;i<sample_.features.size();i++){
-    	sample(i)=sample_.features[i];
-        }
-        //normalization
-        sample=normalizer(sample);
-        //dimension reduction
-        dlib::matrix<double>sample_dim_reduced =dim_reduce.X_dim_reduce*sample-dim_reduce.M_dim_reduce;
-        sample.set_size(sample_dim_reduced.size());
-        sample=sample_dim_reduced;
-    	//cout<<sample;
-
-        //result of the decision function
-        return renormalized_decision_function.function(sample);
+        return bin_decision_function(sample);
   }
 };
 
@@ -78,9 +49,6 @@ class BinClassifier{
       feature_size(0),
       cross_validation_manifold(cross_validation_manifold_)
       {};
-       void import_preprocessor(const Preprocessor& preprocessor);
-       void import_params(std::string filename);
-       void export_params(std::string filename);
        BinDecisionFunc<kernel> train(const std::vector<sample_type>& samples_, const std::vector<double>& labels_)const;
   protected:
     classifier set_params(const double& gamma, const double& second_param)const;
@@ -91,49 +59,7 @@ class BinClassifier{
     BinDecisionFunc<kernel> bin_dec_func;
 };
 
-template<class classifier,class kernel>
-void BinClassifier<classifier,kernel>::import_preprocessor(const Preprocessor& preprocessor){
-  bin_dec_func.normalizer=preprocessor.normalizer;
-  bin_dec_func.dim_reduce=preprocessor.dim_reduce;
-}
 
-
-template<class classifier,class kernel>
-void BinClassifier<classifier,kernel>::import_params (std::string filename)
-{
-  ifstream in_stream(filename,ifstream::in);
-  if(!in_stream.good()){
-      cout<<"file does not exists"<<endl;
-      in_stream.close();
-      return;
-  }
-  try {
-      dlib::deserialize(bin_dec_func.dim_reduce.X_dim_reduce,in_stream);
-      dlib::deserialize(bin_dec_func.dim_reduce.M_dim_reduce,in_stream);
-      dlib::deserialize(bin_dec_func.normalizer,in_stream);
-      dlib::deserialize(bin_dec_func.renormalized_decision_function,in_stream);
-      bin_dec_func.imported=true;
-      cout<<"file sucessfully loaded"<<endl;
-  } catch (dlib::serialization_error) {
-      cout<<"file could not be loaded"<<endl;
-  }
-  in_stream.close();
-}
-template<class classifier,class kernel>
-void BinClassifier<classifier,kernel>::export_params (std::string filename)
-{
-  ofstream out_stream(filename,ofstream::out);
-  try {
-      dlib::serialize(bin_dec_func.dim_reduce.X_dim_reduce,out_stream);
-      dlib::serialize(bin_dec_func.dim_reduce.M_dim_reduce,out_stream);
-      dlib::serialize(bin_dec_func.normalizer,out_stream);
-      dlib::serialize(bin_dec_func.renormalized_decision_function,out_stream);
-        cout<<"file sucessfully saved"<<endl;
-    } catch (dlib::serialization_error) {
-        cout<<"file does not exists"<<endl;
-    }
-    out_stream.close();
-}
 template<class classifier,class kernel>
 BinDecisionFunc<kernel> BinClassifier<classifier,kernel>::train (const std::vector<sample_type>& samples_, const std::vector<double>& labels_)const
 {
@@ -141,28 +67,16 @@ BinDecisionFunc<kernel> BinClassifier<classifier,kernel>::train (const std::vect
     std::vector<sample_type> samples__=samples_;
     std::vector<double> labels__=labels_;
 
-//    vector_normalizer<sample_type> normalizer=normalize_input(samples__);
-    res.normalizer=bin_dec_func.normalizer;
-    res.renormalized_decision_function.normalizer=bin_dec_func.normalizer;
-
 
     if(!bin_dec_func.imported){
-	//handle dimension reduction
-	res.dim_reduce=bin_dec_func.dim_reduce;
-	//take care of converting a multiclass into a binary classificatopn
 	if(!is_binary_classification_problem(samples__,labels__)){
-	  for(auto& label:labels__){
-	      if(label>8){
-		  label=-1;
-	      }else{
-		  label=1;
-	      }
-	  }
+	  cout<<"not a binary decision problem use multiclass classifier!"<<endl;
+	  throw;
 	}
 	//optimize hyper parameter
 	classifier trainer=optimize_model_param(samples__,labels__);
 	//train model
-	res.renormalized_decision_function.function = trainer.train(samples__,labels__);
+	res.bin_decision_function = trainer.train(samples__,labels__);
 	return res;
     }
     return bin_dec_func;
@@ -180,6 +94,7 @@ classifier BinClassifier<classifier,kernel>::optimize_model_param (const std::ve
       matrix<double> opt_result = cross_validate_trainer(trainer,samples_,labels_,cross_validation_manifold);
       //cout<<"optimization step taken"<<endl;
       return 2*prod(opt_result)/sum(opt_result);
+      //return sqrt(opt_result(0)*opt_result(0)+opt_result(1)*opt_result(1));
     };
     OptimizationBoundarys boundarys=get_opt_boundariy();
     auto result = find_max_global(cross_validation_score,
@@ -191,35 +106,56 @@ classifier BinClassifier<classifier,kernel>::optimize_model_param (const std::ve
     trainer = set_params(best_gamma,best_second_param);
     //asset that datapoints are randomized
     cout<<cross_validate_trainer(trainer,samples_,labels_,cross_validation_manifold)<<endl;
-    cout<<best_gamma<<" : "<<best_second_param<<endl;
+    //cout<<best_gamma<<" : "<<best_second_param<<endl;
     return trainer;
 }
 
-template<class classifier,class kernel>
+template<class dec_func_type=decision_function<sample_type>>
 struct MultDecisionFunc{
-  typedef decision_function<kernel> dec_funct_type;
-  typedef normalized_function<dec_funct_type> funct_type;
-  DimReduction dim_reduce;
-  funct_type renormalized_decision_function;
-  vector_normalizer<sample_type> normalizer;
-  bool imported=false;
-  double operator()(const DataPoint& sample_)const{
-    //datapoint to dlib::matrix conversion
+  dec_func_type mult_decision_function;
+  double operator()(const sample_type& sample_)const{
     sample_type sample;
-    sample.set_size(sample_.features.size());
-    for(unsigned int i=0;i<sample_.features.size();i++){
-      sample(i)=sample_.features[i];
-    }
-    //normalization
-    sample=normalizer(sample);
-    //dimension reduction
-    dlib::matrix<double>sample_dim_reduced =dim_reduce.X_dim_reduce*sample-dim_reduce.M_dim_reduce;
-    sample.set_size(sample_dim_reduced.size());
-    sample=sample_dim_reduced;
-      //cout<<sample;
+    sample.set_size(sample_.size());
+    sample=sample_;
 
     //result of the decision function
-    return renormalized_decision_function.function(sample);
+    return mult_decision_function(sample);
+  }
+  bool import_function(std::string filename){
+    bool res=false;
+    ifstream in_stream(filename+".dec",ifstream::in);
+    if(!in_stream.good()){
+	cout<<"file does not exists"<<endl;
+	in_stream.close();
+	return false;
+    }
+    try {
+	dlib::deserialize(mult_decision_function,in_stream);
+	//dlib::deserialize(filename+".dec")>>mult_decision_function;
+	cout<<"file sucessfully loaded"<<endl;
+	res=true;
+    } catch (dlib::serialization_error) {
+	cout<<"file could not be loaded"<<endl;
+	res=false;
+    }
+    in_stream.close();
+    return res;
+  }
+  bool export_function(std::string filename){
+    bool res=false;
+      ofstream out_stream(filename+".dec",ofstream::out);
+      try {
+	  dlib::serialize(mult_decision_function,out_stream);
+	  //dlib::serialize(filename+".dec")<<mult_decision_function;
+	  cout<<"file sucessfully saved"<<endl;
+	  res=true;
+      } catch (dlib::serialization_error e) {
+	  cout<<e.what()<<endl;
+	  cout<<"file could not be saved"<<endl;
+	  res=false;
+      }
+      out_stream.close();
+      return res;
   }
 };
 
@@ -234,9 +170,8 @@ public:
   void import_classifiers(BinClassifier<bin_classifier,bin_kernel> new_trainer){trainer.set_trainer(new_trainer);};
   template<class bin_classifier,class bin_kernel=rbf_kernel>
   void import_classifiers(BinClassifier<bin_classifier,bin_kernel> new_trainer,double problem_1,double problem_2){trainer.set_trainer(new_trainer,problem_1,problem_2);};
-  void train(std::vector<sample_type> samples,std::vector<double> labels){
-    cout << "cross validation: \n" << cross_validate_multiclass_trainer(trainer, samples, labels, this->cross_validation_manifold) << endl;
-  };
+  template<class mult_dec_func_type>
+  MultDecisionFunc<mult_dec_func_type> train(const std::vector<sample_type> samples,const std::vector<double> labels);
 private:
   classifier trainer;
 };

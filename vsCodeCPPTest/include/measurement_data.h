@@ -20,7 +20,6 @@
 
 using namespace H5;
 
-
 struct ClassifierParam{
   TrainerType type;
   bool normalize;
@@ -38,6 +37,7 @@ struct ClassifierParam{
   }
 };
 
+
 struct Trace{
   std::vector<double> real;
   std::vector<double> imag;
@@ -51,6 +51,31 @@ struct Trace{
   unsigned int num_points;
   std::string start_freq;
   std::string stop_freq;
+};
+
+struct FrequencySpan{
+  double start_freq=0;
+  double stop_freq=0;
+  double delta_f=0;
+  void operator<<(Trace trace){
+    double min_freq=std::stod(trace.start_freq);
+    double max_freq=std::stod(trace.stop_freq);
+    if(start_freq<min_freq)
+      start_freq=min_freq;
+    if(stop_freq>max_freq)
+      stop_freq=max_freq;
+    delta_f= (max_freq-min_freq)/trace.num_points;
+
+  }
+  bool operator()(int index){
+    if(stop_freq==0)
+      return true;
+    double freq=start_freq+index*delta_f;
+    //if ((unsigned)(number-lower) <= (upper-lower))
+    if(freq>=start_freq&&freq<=stop_freq)
+      return true;
+    return false;
+  };
 };
 
 struct Channel{
@@ -71,19 +96,16 @@ class Measurement{
     int num_features;
     std::vector<Device> devices;
     std::string date;
-    DataPoint getDatapoint(unsigned int device_index,bool only_mag=false);
+    DataPoint getDatapoint(const bool& only_mag=false);
     void rename(const std::string newName){date = newName;};
     double label;
     std::string h5_name;
-//    void serialize();
-//    void deserialize();
-//    implement serialization for subclasses
 };
 
 class H5MeasurementFile{
   public:
     H5MeasurementFile(std::string& filename_):filename(filename_){H5File file(filename, H5F_ACC_CREAT | H5F_ACC_RDWR);file.close();};
-    std::vector<Measurement> scan(bool use_reps=false, bool unformatted=true);// change to void  to adopt for either new data or exported files
+    std::vector<Measurement> scan(bool use_reps=false, bool unformatted=true,std::vector<string> filt_traces={},FrequencySpan filt_freq_span=FrequencySpan());// change to void  to adopt for either new data or exported files
     void label(double& label);
     void label(string label_filename);
     void export_data(std::vector<Measurement>& data_);
@@ -94,6 +116,8 @@ class H5MeasurementFile{
     std::string filename;
 
 };
+
+
 
 
 #endif /* INCLUDE_MEASUREMENT_DATA_H_ */

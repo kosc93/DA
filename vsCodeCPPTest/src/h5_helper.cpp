@@ -37,6 +37,8 @@ int main(int argc, char** argv){
   parser.add_option("u","use formatted data(without any transformation)");
   parser.add_option("reps","flag to use repeated measurements");
   parser.add_option("normalize","flag to normalize errorplot");
+  parser.add_option("traces","traces to display, please put a whitespace separated list in scores like 'Tr1 Tr3 Tr4'",1);
+  parser.add_option("freqs","frequency range to display, please put a whitespace separated Hz range in scores like '2e9 1e10'",1);
   parser.add_option("h","Display this help message.");
 
 
@@ -50,7 +52,33 @@ int main(int argc, char** argv){
       parser.print_options();
       return 0;
   }
-
+  //input traces for filtering
+  std::vector<string> filt_traces;
+  if(parser.option("traces")){
+      std::stringstream traces(parser.option("traces").argument());
+      std::string trace_str;
+      while(traces>>trace_str){
+	filt_traces.push_back(trace_str);
+      }
+      if(filt_traces.size()==0){
+	cout<<"traces input not recognized"<<endl;
+	return -1;
+      }
+  }
+  // frequency span to be extracted
+  FrequencySpan filt_freqs;
+  if(parser.option("freqs")){
+      std::stringstream freqs(parser.option("freqs").argument());
+      double start_freq=0,stop_freq=0;
+      while(freqs>>start_freq>>stop_freq){
+	  filt_freqs.start_freq=start_freq;
+	  filt_freqs.stop_freq=stop_freq;
+      }
+      if(start_freq==0&&stop_freq==0){
+	cout<<"frequency input not recognized"<<endl;
+	return -1;
+      }
+  }
   std::string filename;
   if(parser.option("n")){
       filename ="new_data.h5";
@@ -75,7 +103,7 @@ int main(int argc, char** argv){
   }
 
   //make sure that there is data to b processed
-  static std::vector<Measurement> data = file.scan(parser.option("reps"),parser.option("u"));
+  static std::vector<Measurement> data = file.scan(parser.option("reps"),parser.option("u"),filt_traces,filt_freqs);
   if(data.size()==0){
         cout<<"no measurements found!"<<endl;
         return -1;
@@ -114,6 +142,7 @@ int main(int argc, char** argv){
   int y_length = data[0].devices[0].channels.size()*data[0].devices[0].channels[0].traces.size()*tr_length;//#channels+#traces_per channel*#points_per_trace
   double formatted_data[x_length][y_length];
   int meas_num =1;
+  bool plot=parser.option("a")||parser.option("p")||parser.option("r");
   for(auto& measurement:data){
       Device dev = measurement.devices[0];
       int tr_point_num =0;
@@ -128,14 +157,17 @@ int main(int argc, char** argv){
 	      double delta_freq = (f_max-f_min)/tr_length;
 	      for(long int j =0;j<tr_length;j++){
 		  formatted_data[0][tr_point_num]=f_min+(tr_point_num%tr_length)*delta_freq;
-		  if(dB){
-		      formatted_data[meas_num][tr_point_num]=20*std::log10(trace.mag[j]);
+		  if(plot){
+		    if(dB){
+			formatted_data[meas_num][tr_point_num]=20*std::log10(trace.mag[j]);
+		    }else{
+			formatted_data[meas_num][tr_point_num]=abs(trace.mag[j]);
+		    }
+		    formatted_data[meas_num+1][tr_point_num]=trace.phase[j];
 		  }else{
-		      formatted_data[meas_num][tr_point_num]=abs(trace.mag[j]);
+		    formatted_data[meas_num][tr_point_num]=trace.real[j];
+		    formatted_data[meas_num+1][tr_point_num]=trace.imag[j];
 		  }
-		  formatted_data[meas_num+1][tr_point_num]=trace.phase[j];
-		  //formatted_data[meas_num][tr_point_num]=trace.real[j];
-		  //formatted_data[meas_num+1][tr_point_num]=trace.imag[j];
 		  tr_point_num++;
 	      }
 	      num_tr++;
@@ -191,7 +223,7 @@ int main(int argc, char** argv){
   }
 
   //handle plotting flags
-  if(parser.option("a")||parser.option("p")||parser.option("r")){
+  if(plot){
     //handle plotting selection
     unsigned long begin=get_option(parser,"b",0);
     unsigned long end=get_option(parser,"e",1000);//no more linestyles with default gnuplot
@@ -318,7 +350,7 @@ int main(int argc, char** argv){
 	    e_info.name=class_.first;
 	    std::vector<DataPoint> datapoints;//datapoints of the class
 	    for(auto& measurement:class_.second){
-		datapoints.push_back(measurement.getDatapoint(0,true));
+		datapoints.push_back(measurement.getDatapoint(true));
 	    }
 	    int feature_size=datapoints[0].features.size();
 	    e_info.size=feature_size;

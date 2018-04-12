@@ -11,6 +11,7 @@
 #define NUM_PENS 8
 #include <stdexcept>
 #include <vector>
+#include <dlib/matrix.h>
 #ifndef _NUM_FEATURES
 #define NUM_FEATURES 360
 #else
@@ -19,6 +20,7 @@
 #include <dlib/svm.h>
 #include <dlib/svm_threaded.h>
 #include <dlib/threads.h>
+#include <stdio.h>
 using namespace dlib;
 class NotImplementedException : public std::logic_error
 {
@@ -40,6 +42,25 @@ struct DataPoint{
         const double original_class;
         double calculated_class;
         std::vector<double> features;
+        double cos_sim(const DataPoint& ref)const{
+          if(features.size()!=ref.features.size()){
+              std::cout<<"feature size must  be equal"<<std::endl;
+              throw;
+          }
+          matrix<double,0,1> A;
+          matrix<double,0,1> B;
+	  long feature_size = long(features.size());
+	  A.set_size(feature_size);
+	  B.set_size(feature_size);
+	  for(unsigned int i=0;i<feature_size;i++){
+	      A(i)=features[i];
+	      B(i)=ref.features[i];
+	  }
+          //A dot B / sqrt(sum(A pointwise A)) sqrt(sum(B pointwise B))
+	  double dotprod=dot(A,B);
+	  double nenner =(sqrt(sum(squared(A)))*sqrt(sum(squared(B))));
+          return dotprod/nenner;
+        }
 };
 
 struct DimReduction{

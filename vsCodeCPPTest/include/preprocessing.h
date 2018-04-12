@@ -15,7 +15,8 @@ using namespace dlib;
 
 class Preprocessor{
 public:
-  long feature_size=0;
+  unsigned long feature_size=0;
+  bool imported=false;
   std::vector<sample_type> samples;
   std::vector<double> labels;
   DimReduction dim_reduce;
@@ -23,6 +24,9 @@ public:
   void import_data(const std::vector<DataPoint>& datapoints_);
   void rand_and_normalize();
   void reduce_dim();
+  void import_params(std::string filename);
+  void export_params(std::string filename);
+  sample_type operator()(DataPoint& datapoint);
 };
 
 
