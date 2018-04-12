@@ -113,6 +113,10 @@ classifier BinClassifier<classifier,kernel>::optimize_model_param (const std::ve
 template<class dec_func_type=decision_function<sample_type>>
 struct MultDecisionFunc{
   dec_func_type mult_decision_function;
+  std::string filter_hash;
+  void operator <<(std::string hash){
+    filter_hash=hash;
+  }
   double operator()(const sample_type& sample_)const{
     sample_type sample;
     sample.set_size(sample_.size());
@@ -130,6 +134,13 @@ struct MultDecisionFunc{
 	return false;
     }
     try {
+	std::string imported_filter_hash;
+	dlib::deserialize(imported_filter_hash,in_stream);
+	if(filter_hash!=imported_filter_hash){
+	    cout<<"filters in imported file does not match!"<<endl;
+	    throw dlib::serialization_error("filters not matching");
+	}
+
 	dlib::deserialize(mult_decision_function,in_stream);
 	//dlib::deserialize(filename+".dec")>>mult_decision_function;
 	cout<<"file sucessfully loaded"<<endl;
@@ -145,6 +156,7 @@ struct MultDecisionFunc{
     bool res=false;
       ofstream out_stream(filename+".dec",ofstream::out);
       try {
+	  dlib::serialize(filter_hash,out_stream);
 	  dlib::serialize(mult_decision_function,out_stream);
 	  //dlib::serialize(filename+".dec")<<mult_decision_function;
 	  cout<<"file sucessfully saved"<<endl;

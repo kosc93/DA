@@ -25,6 +25,8 @@ int main(int argc, char **argv) {
   parser.add_option("v","set verbose output");
   parser.add_option("reps","flag to use repeated measurements");
   parser.add_option("u","use unformatted data(without any transformation)");
+  parser.add_option("traces","traces to display, please put a whitespace separated list in scores like 'Tr1 Tr3 Tr4'",1);
+  parser.add_option("freqs","frequency range to display, please put a whitespace separated Hz range in scores like '2e9 1e10'",1);
   parser.add_option("h","Display this help message.");
   parser.parse(argc,argv);
   const char* one_time_opts[] = {"F","u","h","reps"};
@@ -35,8 +37,39 @@ int main(int argc, char **argv) {
        parser.print_options();
        return 0;
   }
+  stringstream filter_hash("");
+  //input traces for filtering
+  std::vector<string> filt_traces;
+  if(parser.option("traces")){
+      std::stringstream traces(parser.option("traces").argument());
+      std::string trace_str;
+      while(traces>>trace_str){
+	  filter_hash<<trace_str<<"_";
+	  filt_traces.push_back(trace_str);
+      }
+      if(filt_traces.size()==0){
+      cout<<"traces input not recognized"<<endl;
+      return -1;
+      }
+  }
+  // frequency span to be extracted
+  FrequencySpan filt_freqs;
+  if(parser.option("freqs")){
+      std::stringstream freqs(parser.option("freqs").argument());
+      double start_freq=0,stop_freq=0;
+      while(freqs>>start_freq>>stop_freq){
+	filt_freqs.start_freq=start_freq;
+	filt_freqs.stop_freq=stop_freq;
+	filter_hash<<start_freq<<"_"<<stop_freq;
+      }
+      if(start_freq==0&&stop_freq==0){
+      cout<<"frequency input not recognized"<<endl;
+      return -1;
+      }
+  }
 
   Preprocessor preprocessor;
+  preprocessor<<filter_hash.str();
   //check if filename is validrbf_kernel
   if(parser.option("F")){
       string filename;
@@ -44,7 +77,7 @@ int main(int argc, char **argv) {
       filename=parser.option("F").argument();
       H5MeasurementFile file(filename);
         //make sure that there is data to b processed
-        std::vector<Measurement> data = file.scan(parser.option("reps"),parser.option("u"),std::vector<string>(),FrequencySpan());
+        std::vector<Measurement> data = file.scan(parser.option("reps"),parser.option("u"),filt_traces,filt_freqs);
 
         if(data.size()==0){
             cout<<"no measurements found"<<endl;
@@ -84,7 +117,7 @@ int main(int argc, char **argv) {
   //typedef one_vs_all_decision_function<ova_trainer,decision_function<krnl>>  mult_func_type;
   typedef multiclass_linear_decision_function<krnl,double>  mult_func_type;
   MultDecisionFunc<mult_func_type> learned_func;
-
+  learned_func<<filter_hash.str();
   //handle decision function import
   if(parser.option("I")){
       if(!learned_func.import_function(parser.option("I").argument())){
@@ -103,6 +136,7 @@ int main(int argc, char **argv) {
   }
 
   if(parser.option("E")){
+      learned_func<<filter_hash.str();
       learned_func.export_function(parser.option("E").argument());
   }
 

@@ -37,7 +37,7 @@ void
 Preprocessor::reduce_dim ()
 {
   if(!imported){
-    std::cout<<"reducing dimensions"<<std::endl;
+    std::cout<<"reducing dimensions from "<<feature_size<<std::endl;
     dlib::matrix<double>X;
 
     X.set_size(samples.size(),feature_size);
@@ -56,6 +56,7 @@ Preprocessor::reduce_dim ()
     dlib::compute_lda_transform(X,M,labs);
     dim_reduce.X_dim_reduce=X;
     dim_reduce.M_dim_reduce=M;
+    cout<<"to "<<M.size()<<endl;
   }
   std::cout<<"lda computed"<<std::endl;
   for(auto& sample_ : samples){
@@ -76,6 +77,19 @@ Preprocessor::import_params (std::string filename)
       return;
   }
   try {
+      unsigned long imported_feature_size;
+      dlib::deserialize(imported_feature_size,in_stream);
+      if(feature_size!=imported_feature_size){
+	  cout<<"feature size in imported file does not match!"<<endl;
+	  throw dlib::serialization_error("feature size not matching");
+      }
+      std::string imported_filter_hash;
+      dlib::deserialize(imported_filter_hash,in_stream);
+      if(filter_hash!=imported_filter_hash){
+	  cout<<"filters in imported file does not match!"<<endl;
+	  throw dlib::serialization_error("filters not matching");
+      }
+
       dlib::deserialize(dim_reduce.X_dim_reduce,in_stream);
       dlib::deserialize(dim_reduce.M_dim_reduce,in_stream);
       dlib::deserialize(normalizer,in_stream);
@@ -92,6 +106,8 @@ Preprocessor::export_params (std::string filename)
 {
   ofstream out_stream(filename+".preprocessing",ofstream::out);
   try {
+     dlib::serialize(feature_size,out_stream);
+     dlib::serialize(filter_hash,out_stream);
      dlib::serialize(dim_reduce.X_dim_reduce,out_stream);
      dlib::serialize(dim_reduce.M_dim_reduce,out_stream);
      dlib::serialize(normalizer,out_stream);

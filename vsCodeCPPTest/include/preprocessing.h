@@ -13,10 +13,13 @@ using namespace std;
 using namespace dlib;
 
 
-class Preprocessor{
-public:
+struct Preprocessor{
   unsigned long feature_size=0;
   bool imported=false;
+  std::string filter_hash;
+  void operator <<(std::string hash){
+    filter_hash=hash;
+  }
   std::vector<sample_type> samples;
   std::vector<double> labels;
   DimReduction dim_reduce;
