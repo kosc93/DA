@@ -1,7 +1,7 @@
 /RemoteSystemsTempFiles/
-/*.dat
-/*.h5
-/*.txt
+*.dat
+*.h5
+*.txt
 /saved_function.dat
 /test.o
 /test_setup.h5
