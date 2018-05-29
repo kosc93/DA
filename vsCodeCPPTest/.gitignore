@@ -5,6 +5,7 @@
 /test_setup.h5
 /.*/
 /.*
+/batchtest/
 /bin/
 /build/
 !.gitignore

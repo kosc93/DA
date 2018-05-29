@@ -2,12 +2,21 @@
 
 
 template<>
+krr_trainer<rbf_kernel> BinClassifier<krr_trainer<rbf_kernel>,rbf_kernel>::set_params(const double& gamma, const double& second_param)const{
+  krr_trainer<rbf_kernel> trainer;
+  trainer.set_kernel(rbf_kernel(gamma));
+  return trainer;
+}
+
+template<>
 rvm_trainer<rbf_kernel> BinClassifier<rvm_trainer<rbf_kernel>,rbf_kernel>::set_params(const double& gamma, const double& second_param)const{
   rvm_trainer<rbf_kernel> trainer;
   trainer.set_kernel(rbf_kernel(gamma));
   trainer.set_epsilon(second_param);
   return trainer;
 }
+
+
 
 template<>
 svm_nu_trainer<rbf_kernel> BinClassifier<svm_nu_trainer<rbf_kernel>,rbf_kernel>::set_params(const double& gamma,const  double& second_param)const{
@@ -24,6 +33,12 @@ svm_c_trainer<rbf_kernel> BinClassifier<svm_c_trainer<rbf_kernel>,rbf_kernel>::s
   trainer.set_c(second_param);
   return trainer;
 }
+
+template<>
+krr_trainer<lin_kernel> BinClassifier<krr_trainer<lin_kernel>,lin_kernel>::set_params(const double& gamma, const double& second_param)const{
+  return krr_trainer<lin_kernel>();
+}
+
 template<>
 rvm_trainer<lin_kernel> BinClassifier<rvm_trainer<lin_kernel>,lin_kernel>::set_params(const double& gamma, const double& second_param)const{
   return rvm_trainer<lin_kernel>();
@@ -41,6 +56,15 @@ svm_c_trainer<lin_kernel> BinClassifier<svm_c_trainer<lin_kernel>,lin_kernel>::s
   svm_c_trainer<lin_kernel> trainer;
   trainer.set_c(second_param);
   return trainer;
+}
+
+template<>
+OptimizationBoundarys BinClassifier<krr_trainer<rbf_kernel>,rbf_kernel>::get_opt_boundariy()const{
+  OptimizationBoundarys res;
+  res.lbound={1e-6,9e-2};
+  res.ubound={1,11e-2};
+  return res;
+
 }
 
 template<>
@@ -67,6 +91,15 @@ OptimizationBoundarys BinClassifier<svm_c_trainer<rbf_kernel>,rbf_kernel>::get_o
 }
 
 template<>
+OptimizationBoundarys BinClassifier<krr_trainer<lin_kernel>,lin_kernel>::get_opt_boundariy()const{
+  OptimizationBoundarys res;
+  res.lbound={1e-6,9e-2};
+  res.ubound={1,11e-2};
+  return res;
+
+}
+
+template<>
 OptimizationBoundarys BinClassifier<rvm_trainer<lin_kernel>,lin_kernel>::get_opt_boundariy()const{
   OptimizationBoundarys res;
   res.lbound={1e-6,9e-2};
@@ -74,6 +107,46 @@ OptimizationBoundarys BinClassifier<rvm_trainer<lin_kernel>,lin_kernel>::get_opt
   return res;
 
 }
+
+
+template<>
+krr_trainer<rbf_kernel> BinClassifier<krr_trainer<rbf_kernel>,rbf_kernel>::optimize_model_param (const std::vector<sample_type>& samples_, const std::vector<double>& labels_)const{
+  krr_trainer<rbf_kernel>trainer;
+  cout<<"opt startet"<<endl;
+  trainer.use_classification_loss_for_loo_cv();
+  auto cross_validation_score = [&](const double gamma,const double second_param){
+
+        trainer = set_params(gamma,second_param);
+        //asset that datapoints are randomized
+        std::vector<double> loo_values;
+	trainer.train(samples_, labels_, loo_values);
+
+	// Print gamma and the fraction of samples correctly classified during LOO cross-validation.
+	return mean_sign_agreement(labels_, loo_values);
+  };
+  //OptimizationBoundarys boundarys=get_opt_boundariy();
+  auto result = find_max_global(cross_validation_score,
+			    {1e-6,1},
+			    {1,10},
+			    max_function_calls(30));
+  double best_gamma = result.x(0);
+  double best_second_param = result.x(1);
+  trainer = set_params(best_gamma,best_second_param);
+  std::vector<double> loo_values;
+  trainer.train(samples_, labels_, loo_values);
+  cout<<mean_sign_agreement(labels_, loo_values)<<endl;
+
+  // parameter setzen
+  return trainer;
+}
+
+template<>
+krr_trainer<lin_kernel> BinClassifier<krr_trainer<lin_kernel>,lin_kernel>::optimize_model_param (const std::vector<sample_type>& samples_, const std::vector<double>& labels_)const{
+  krr_trainer<lin_kernel>trainer;
+  trainer.use_classification_loss_for_loo_cv();
+  return trainer;
+}
+
 template<>
 rvm_trainer<lin_kernel> BinClassifier<rvm_trainer<lin_kernel>,lin_kernel>::optimize_model_param (const std::vector<sample_type>& samples_, const std::vector<double>& labels_)const{
   return rvm_trainer<lin_kernel>();

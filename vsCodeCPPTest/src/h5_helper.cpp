@@ -37,7 +37,7 @@ int main(int argc, char** argv){
   parser.add_option("u","use formatted data(without any transformation)");
   parser.add_option("reps","flag to use repeated measurements");
   parser.add_option("normalize","flag to normalize errorplot");
-  parser.add_option("traces","traces to display, please put a whitespace separated list in scores like 'Tr1 Tr3 Tr4'",1);
+  parser.add_option("traces","traces to display, please put a whitespace separated list in scores like 'Trc1 Trc3 Trc4'",1);
   parser.add_option("freqs","frequency range to display, please put a whitespace separated Hz range in scores like '2e9 1e10'",1);
   parser.add_option("h","Display this help message.");
 
@@ -186,15 +186,23 @@ int main(int argc, char** argv){
  	  label<<measurement.h5_name<<" "<<measurement.label<<" "<<endl;
        }
        label.close();
-       ofstream mlpack ("mlpack.txt",ofstream::out);
-         mlpack<<std::setprecision(10);
+       ofstream o_stream;
+       if(parser.option("u")){
+	   o_stream.open("unformatted.txt",ofstream::out);
+       }else{
+	   o_stream.open("formatted.txt",ofstream::out);
+       }
+
+       //ofstream mlpack ("mlpack.txt",ofstream::out);
+         o_stream<<std::setprecision(10);
          for(int x =1;x<x_length;x=x+2){
              for(int y=0;y<y_length;y++){
-       	  mlpack<<formatted_data[x][y]<<" \t"<<formatted_data[x+1][y]<<" \t";
+       	  o_stream<<formatted_data[x][y]<<" \t"<<formatted_data[x+1][y]<<" \t";
              }
-             mlpack<<endl;
+             o_stream<<endl;
+
          }
-         mlpack.close();
+         o_stream.close();
    }
   //handle touchstone creation
   if(parser.option("t")){
@@ -324,14 +332,17 @@ int main(int argc, char** argv){
       }
 
       plot<<"unset multiplot"<<endl;
+      plot<<"pause 30"<<endl;
+      plot<<"reread"<<endl;
       plot.close();
       return system("gnuplot plot.dat -persist");
     }
 
     if(parser.option("r")){
 	struct error_info{
+	  std::vector<double> min;
+	  std::vector<double> max;
 	  std::vector<double> mean;
-	  std::vector<double> variance;
 	  string name;
 	  int size=0;
 	};//error info for a single class
@@ -359,13 +370,11 @@ int main(int argc, char** argv){
 		for(const auto& datapoint:datapoints){
 		    rs.add(datapoint.features[i]);
 		}
+		e_info.max.push_back(rs.max());
+		e_info.min.push_back(rs.min());
 		e_info.mean.push_back(rs.mean());
-		if(dB){
-		    e_info.variance.push_back(rs.variance());
-		    //e_info.variance.push_back(-0.01*std::log10(rs.variance()));
-		}else{
-		    e_info.variance.push_back(rs.variance());
-		}
+		//e_info.variance.push_back(-0.01*std::log10(rs.variance()));
+
 	    }
 	    infos.push_back(e_info);
 	}
@@ -377,6 +386,7 @@ int main(int argc, char** argv){
 	plot<<"set term qt size 1920,1080"<<endl;
 	plot<<"set xtics "<<0<<","<<tr_length<<","<<num_tr*tr_length<<endl;
 	plot<<"set grid xtics"<<endl;
+	plot<<"set style fill pattern 1 "<<endl;
 	if(dB){
 	    plot<<"set logscale y"<<endl;
 	}
@@ -384,16 +394,18 @@ int main(int argc, char** argv){
 	int class_counter=0;
 	for(const auto& class_:infos){
 	    for(int i=0;i<class_.size;i++){
-		error_stream<<i<<" \t\t"<<class_.mean[i]<<" \t\t"<<class_.variance[i]<< endl;
+		error_stream<<i<<" \t\t"<<class_.max[i]<<" \t\t"<<class_.min[i]<<" \t\t"<<class_.mean[i]<< endl;
 	    }
 	    error_stream<<endl;
 	    error_stream<<endl;
 
 	    //plotting
-	    plot<<"'error_dat.dat' i "<<class_counter<<" u 1:2:3 w yerrorbars t 'var class "<<class_.name<<"' lt "<<class_counter+1<<", '' i "<<class_counter<<" u 1:2 w lines t 'mean class "<<class_.name<<"' lt "<<class_counter+1<<" dt 3 ,";
+	    plot<<"'error_dat.dat' i "<<class_counter<<" u 1:2:3 w filledcu t 'var class "<<class_.name<<"' lt "<<class_counter+1<<", '' i "<<class_counter<<" u 1:4 w lines t 'mean class "<<class_.name<<"' lt "<<class_counter+1<<" dt 3 ,";
 	    class_counter++;
 	}
 	plot<<endl;
+	plot<<"pause 30"<<endl;
+	plot<<"reread"<<endl;
 	error_stream.close();
 	plot.close();
 

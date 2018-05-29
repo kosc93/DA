@@ -2,7 +2,7 @@ CC := g++ -O0 -g #h5c++##
 SRCDIR := src
 BINDIR := bin
 BUILDDIR := build
-EXECUTABLES :=   $(BINDIR)/vo_klass $(BINDIR)/h5_helper  $(BINDIR)/dlib_test #$(BINDIR)/myApp $(BINDIR)/test_hdf5 #$(BINDIR)/opt #$(BINDIR)/test_hdf5#$(BINDIR)/svm_ex  #$(BINDIR)/GUItest $(BINDIR)/bayes_net_gui_ex $(BINDIR)/3d_point_cloud_ex $(BINDIR)/surf_ex
+EXECUTABLES :=   $(BINDIR)/vo_klass $(BINDIR)/h5_helper  $(BINDIR)/script_creator #$(BINDIR)/myApp $(BINDIR)/test_hdf5 #$(BINDIR)/opt #$(BINDIR)/test_hdf5#$(BINDIR)/svm_ex  #$(BINDIR)/GUItest $(BINDIR)/bayes_net_gui_ex $(BINDIR)/3d_point_cloud_ex $(BINDIR)/surf_ex
 
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
@@ -40,7 +40,7 @@ $(BINDIR)/cmd_parser: $(BUILDDIR)/cmd_parser.o $(BUILDDIR)/source.o
 $(BINDIR)/svm_ex: $(BUILDDIR)/svm_ex.o $(BUILDDIR)/source.o
 	$(CC)   $^ -o $@ $(LIB)
 
-$(BINDIR)/shogunTest: $(BUILDDIR)/shogunTest.o $(BUILDDIR)/source.o
+$(BINDIR)/script_creator: $(BUILDDIR)/script_creator.o
 	$(CC)   $^ -o $@ $(LIB)
 	
 $(BINDIR)/h5_helper: $(BUILDDIR)/h5_helper.o $(BUILDDIR)/measurement_data.o  $(BUILDDIR)/classifier.o  $(BUILDDIR)/source.o 
